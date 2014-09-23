@@ -1,0 +1,6 @@
+- python 2
+ - lxml
+ - argparse
+ - requests
+
+- imagemagick

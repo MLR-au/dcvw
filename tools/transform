@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+from lxml import etree
+import argparse
+
+# read and check the options
+parser = argparse.ArgumentParser(description='Transform tool')
+parser.add_argument('-d', '--document', dest='document', required=True, help='The document to process')
+parser.add_argument('-t', '--transform', dest='transform', required=True, help='The XSLT transform')
+args = parser.parse_args()
+
+# read in the XSL transform 
+xslt = etree.parse(args.transform)
+
+# handle any includes
+xslt.xinclude()
+
+# read the document to be transformed
+doc = etree.parse(args.document)
+
+# transform it
+#  we'll assume the transform will actually load
+#  so we won't bother with exceptions
+transform = etree.XSLT(xslt)
+d = transform(doc)
+
+# write to stdout
+print etree.tostring(d, pretty_print=True)
+
+
+

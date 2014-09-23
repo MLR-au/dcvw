@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [ $# != 2 ]; then
+cat <<EOF
+    Script requires two arguments:
+    $1 = the path to the folder of tif images
+    $2 = where the jpgs should be stored
+
+    ex. $0 TIFF JPG
+EOF
+exit 0
+fi
+
+large="$2/large"
+thumb="$2/thumb"
+[[ ! -d $large ]] && mkdir -p $large
+[[ ! -d $thumb ]] && mkdir -p $thumb
+
+[[ ! -d $1 ]] && echo "$1 doesn't seem like a folder." && exit 0
+
+# look for and process tiff images 
+for f in $(ls $1/*.tif 2> /dev/null) ; do
+    fname=$(basename $f .tif)
+    [[ ! -f "$large/$fname.jpg" ]] && echo "Converting: $f" && convert $f "$large/$fname.jpg"
+    [[ ! -f "$thumb/$fname.jpg" ]] && echo "Thumbnailing: $f" && convert -thumbnail 100 "$large/$fname.jpg" "$thumb/$fname.jpg"
+done
+
+# look for and process jpeg2000 (jp2) images
+for f in $(ls $1/*.jp2 2> /dev/null) ; do
+    fname=$(basename $f .jp2)
+    [[ ! -f "$large/$fname.jpg" ]] && echo "Converting: $f" && convert $f "$large/$fname.jpg"
+    [[ ! -f "$thumb/$fname.jpg" ]] && echo "Thumbnailing: $f" && convert -thumbnail 100 "$large/$fname.jpg" "$thumb/$fname.jpg"
+done
