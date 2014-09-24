@@ -1,0 +1,6 @@
+[General]
+input:                          data
+output:                         /srv/ha/web/DCVW/LIVE
+transforms:                     transforms
+url_base:                       https://web.esrc.unimelb.edu.au/DCVW
+solr:                           http://idxm.internal:8080/DCVW
