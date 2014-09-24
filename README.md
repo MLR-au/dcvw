@@ -11,29 +11,29 @@ data for the page (if it's available) included. In addition, the script will cre
 thumbnail jpegs if they do not already exist.
 
 ## Features
-  * Agnostic to filesystem structure. A folder is deemed to be fit for processing if it contains
+* Agnostic to filesystem structure. A folder is deemed to be fit for processing if it contains
   a file matching the pattern: b???????.xml (This is the bibrecord file).
-  * Can convert TIFF and jpeg2000 images to jpegs useable on the web.
-  * Can extract metadata from the bibrecord file which is ingested into the solr record for each page.
-  * Can extract the OCR data from OmniPage output (if it exists).
+* Can convert TIFF and jpeg2000 images to jpegs useable on the web.
+* Can extract metadata from the bibrecord file which is ingested into the solr record for each page.
+* Can extract the OCR data from OmniPage output (if it exists).
 
 ## Invocation
 
 The process is designed to be run in an automated fashion and it is idempotent. A typical invocation
 by cron might be:
-  * /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post
+* /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post
 
 (This assumes the tool is installed in /usr/share/batch on the target system and configuration is located
 at /etc/batch).
 
 To get an overview of what the tool is doing add --info, e.g.:
-  * /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post --info
+* /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post --info
 
 And to see the gory detail, --debug, e.g:
-  * /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post --debug
+* /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post --debug
 
 For help:
-  * /usr/share/batch/process-udx-archive.py --help
+* /usr/share/batch/process-udx-archive.py --help
 
 ## Example config file
 
