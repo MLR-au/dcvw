@@ -194,6 +194,7 @@ class Crawler:
             thumb_image = os.path.join(url_base, 'JPG/thumb', "%s.jpg" % basename)
 
             doc = self.add_field(copy.deepcopy(d), 'id', "%s.xml" % rid)
+            doc = self.add_field(doc, 'page', basename.split('-')[2])
             doc = self.add_field(doc, 'large_image', large_image)
             doc = self.add_field(doc, 'thumb_image', thumb_image)
 
