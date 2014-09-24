@@ -37,14 +37,12 @@ For help:
 
 ## Example config file
 
-`
-[General]
-input:                          PATH to the data - this could be a local mount or just a folder of content
-output:                         PATH to the output folder
-transforms:                     /usr/share/batch/transforms
-url_base:                       The URL at which the output folder is accessible. This is required to be able to construct the URL links.
-solr:                           http://(URL to your solr server)/(CORE)
-`
+    [General]
+    input:                          PATH to the data - this could be a local mount or just a folder of content
+    output:                         PATH to the output folder
+    transforms:                     /usr/share/batch/transforms
+    url_base:                       The URL at which the output folder is accessible. This is required to be able to construct the URL links.
+    solr:                           http://(URL to your solr server)/(CORE)
 
 
 
