@@ -114,6 +114,7 @@ class Crawler:
 
         d = self.add_field(d, 'bibrecid', bibrecid)
         d = self.add_field(d, 'item', item)
+        d = self.add_field(d, 'group', "%s-%s" % (bibrecid, item))
 
         log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
         return d 

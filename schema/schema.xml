@@ -127,13 +127,17 @@
 
     <field name="bibrecid" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="item" type="string" indexed="true" stored="true" multiValued="false" required="true" />
+    <field name="group" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="page" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="large_image" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="thumb_image" type="string" indexed="true" stored="true" multiValued="false" required="true" />
 
-    <field name="author" type="string" indexed="true" stored="true" multiValued="true" required="false" />
-    <field name="title" type="string" indexed="true" stored="true" multiValued="true" required="false" />
-    <field name="subject" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="author" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="author_sort" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="title" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="title_sort" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_sort" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="imprint" type="string" indexed="true" stored="true" multiValued="true" required="false" />
 
     <field name="text" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" 
@@ -164,6 +168,10 @@
   <!-- copyField commands copy one field to another at the time a document
   is added to the index.  It's used either to index the same field differently,
   or to add multiple fields to the same field for easier/faster searching.  -->
+
+  <copyField source="author" dest="author_sort" />
+  <copyField source="title" dest="title_sort" />
+  <copyField source="subject" dest="subject_sort" />
 
   <!-- copy into hints field 
   <copyField source="city" dest="hints" />
