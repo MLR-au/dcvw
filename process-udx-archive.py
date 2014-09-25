@@ -2,7 +2,6 @@
 
 
 import argparse
-import logging
 import ConfigParser
 from lxml import etree
 import os
@@ -14,7 +13,10 @@ import copy
 import shlex
 
 # get the logger
+import logging
 log = logging.getLogger(__name__)
+
+from Index import *
 
 class Crawler:
     def __init__(self, input_folder, output_folder, transforms, url_base):
@@ -256,7 +258,6 @@ if __name__ == "__main__":
     url_base = cfg.get('General', 'url_base') if (cfg.has_section('General') and cfg.has_option('General', 'url_base')) else None
     solr = cfg.get('General', 'solr') if (cfg.has_section('General') and cfg.has_option('General', 'solr')) else None
     log.debug("Processing: '%s'. Output: '%s'. Solr: '%s'" % (input_folder, output_folder, solr))
-
  
     # check the arguments
     if not os.path.exists(input_folder):
@@ -271,8 +272,17 @@ if __name__ == "__main__":
         crawler = Crawler(input_folder, output_folder, transforms, url_base)
         crawler.run()
 
-#    if args.post is not None:
-        ### POSTER
-        #indexer.post(args.solr, args.clean)
-#        pass
+    if args.post is not None:
+        log.info("Posting the data in: %s" % output_folder)
+        i = Index(solr)
 
+        # walk the path looking for the solr folder
+        for (dirpath, dirnames, filenames) in os.walk(output_folder):
+            if os.path.basename(dirpath) == 'solr':
+                for f in filenames:
+                    solr_doc = os.path.join(dirpath, f)
+           
+                    doc = etree.parse(solr_doc)
+                    i.submit(etree.tostring(doc), solr_doc)
+                i.commit()
+                i.optimize()
