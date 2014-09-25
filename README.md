@@ -19,12 +19,13 @@ thumbnail jpegs if they do not already exist.
 
 ## Invocation
 
+```
 The process is designed to be run in an automated fashion and it is idempotent. A typical invocation
 by cron might be:
 * /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post
 
 (This assumes the tool is installed in /usr/share/batch on the target system and configuration is located
-at /etc/batch).
+at /etc/batch). Of course - you can just crawl or just post as well.
 
 To get an overview of what the tool is doing add --info, e.g.:
 * /usr/share/batch/process-udx-archive.py --config /etc/batch/config --crawl --post --info
@@ -34,6 +35,7 @@ And to see the gory detail, --debug, e.g:
 
 For help:
 * /usr/share/batch/process-udx-archive.py --help
+```
 
 ## Example config file
 
