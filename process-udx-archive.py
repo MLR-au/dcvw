@@ -153,35 +153,26 @@ class Crawler:
             # file fully qualified path
             file_full_path = os.path.join(path, f)
 
-            # only handle image files in the specified format and favour tif images over jp2's
-            if fnmatch(f, 'b???????-?????-?????.tif'):
+            # only handle image files in the specified format 
+            extension = os.path.splitext(f)[1]
+            if extension in [ '.tif', '.jp2' ]:
 
+                large_file = os.path.join(large_images, "%s.jpg" % file_basename)
+                thumb_file = os.path.join(thumb_images, "%s.jpg" % file_basename)
+                 
                 # if we don't have a large image - create it
-                if not os.path.exists(os.path.join(large_images, "%s.jpg" % file_basename)):
+                if not os.path.exists(large_file) or os.stat(large_file).st_size == 0:
                     log.debug("Creating jpeg for %s" % file_full_path)
                     p = subprocess.check_call(['/usr/bin/convert',  file_full_path, "%s/%s.jpg" % (large_images, file_basename) ], stderr=subprocess.PIPE)
                     #print ['convert', file_full_path, "%s/%s.jpg" % (large_images, file_basename) ]
 
                 # if we don't have a thumbnail - create it
-                if not os.path.exists(os.path.join(thumb_images, "%s.jpg" % file_basename)):
+                if not os.path.exists(thumb_file) or os.stat(large_file).st_size == 0:
                     log.debug("Creating thumbnail for %s" % file_full_path)
                     p = subprocess.check_call("/usr/bin/convert -thumbnail 100 %s %s/%s.jpg" % (file_full_path, thumb_images, file_basename), stderr=subprocess.PIPE, shell=True)
 
                 continue
                 
-            elif fnmatch(f, 'b???????-?????-?????.jp2'):
-                # if we don't have a large image - create it
-                if not os.path.exists(os.path.join(large_images, "%s.jpg" % file_basename)):
-                    log.debug("Creating jpeg for %s" % file_full_path)
-                    p = subprocess.check_call(['/usr/bin/convert',  file_full_path, "%s/%s.jpg" % (large_images, file_basename) ], stderr=subprocess.PIPE)
-
-                # if we don't have a thumbnail - create it
-                if not os.path.exists(os.path.join(thumb_images, "%s.jpg" % file_basename)):
-                    log.debug("Creating thumbnail for %s" % file_full_path)
-                    p = subprocess.check_call("/usr/bin/convert -thumbnail 100 %s %s/%s.jpg" % (file_full_path, thumb_images, file_basename), stderr=subprocess.PIPE, shell=True)
-
-                continue
-
     def create_solr_stub_records(self, output_folder, d, url_base):
         log.info('Creating the SOLR stub records')
         images = os.path.join(output_folder, 'JPG', 'large')
