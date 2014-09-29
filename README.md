@@ -47,4 +47,18 @@ For help:
     solr:                           http://(URL to your solr server)/(CORE)
 
 
+## Mounting a remote samba share
 
+For when the data is on a remote samba share...
+
+mount -t cifs //(remote server)/(share) /(local mount point) -o user=(remote user)
+
+
+## Dependencies
+
+- python 2.7
+
+For users on Debian Wheezy:
+```
+aptitude install python2.7-lxml python2.7-argparse python-configparser python-requests imagemagick
+```
