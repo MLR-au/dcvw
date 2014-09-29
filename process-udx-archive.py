@@ -1,4 +1,4 @@
-#!/usr/local/scholarly-python2/bin/python
+#!/usr/bin/env python
 
 
 import argparse
