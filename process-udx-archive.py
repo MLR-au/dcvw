@@ -201,24 +201,27 @@ class Crawler:
     def process_ocr_data(self, ocr_data_file, output_folder):
         log.info('Processing the OCR data')
         count = 0
-        for event, element in etree.iterparse(ocr_data_file,
-            tag = '{http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd}page'):
+        try:
+            for event, element in etree.iterparse(ocr_data_file,
+                tag = '{http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd}page'):
 
-            count += 1
+                count += 1
 
-            # construct the solr source filename
-            source = element.xpath('n:description/n:source', namespaces = { 'n': 'http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd' })[0]
-            fh = source.attrib['file'].split('\\')[-1:][0].split('.')[0]
-            fh = os.path.join(output_folder, 'solr', "%s.xml" % fh)
-            log.debug("Writing OCR data to: %s" % fh)
+                # construct the solr source filename
+                source = element.xpath('n:description/n:source', namespaces = { 'n': 'http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd' })[0]
+                fh = source.attrib['file'].split('\\')[-1:][0].split('.')[0]
+                fh = os.path.join(output_folder, 'solr', "%s.xml" % fh)
+                log.debug("Writing OCR data to: %s" % fh)
 
-            # parse that file as it should have metadata in it
-            tree = etree.parse(fh)
-            tree = self.add_field(tree, 'text', " ".join(etree.tostring(element, method='text', encoding='unicode').split()))
+                # parse that file as it should have metadata in it
+                tree = etree.parse(fh)
+                tree = self.add_field(tree, 'text', " ".join(etree.tostring(element, method='text', encoding='unicode').split()))
 
-            fh = open(fh, 'w')
-            fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
-            fh.close()
+                fh = open(fh, 'w')
+                fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
+                fh.close()
+        except:
+            pass
 
 if __name__ == "__main__":
     
