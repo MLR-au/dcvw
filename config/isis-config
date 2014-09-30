@@ -1,0 +1,6 @@
+[General]
+input:                          data/isis/isiscb
+output:                         /srv/ha/web/ISIS/LIVE
+transforms:                     transforms
+url_base:                       https://web.esrc.unimelb.edu.au/ISIS
+solr:                           http://idx-testing.internal:8080/solr/ISIS
