@@ -50,7 +50,7 @@ class Index:
             log.error("Something went wrong trying to commit the changes.")
             log.error("\n%s" % resp.text)
 
-    def clean(self, match):
+    def clean(self, match=None):
         """Delete all documents
 
         If a site is specified, then only the documents of that site will be purged.
