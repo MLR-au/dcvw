@@ -32,13 +32,16 @@
                 <field name="title"><xsl:value-of select="/n:mods/n:titleInfo[1]/n:title" /></field>
                 <xsl:apply-templates select="/n:mods/n:name/n:displayForm"></xsl:apply-templates>
                 <field name="genre"><xsl:value-of select="/n:mods/n:genre" /></field>
-                <field name="date_start"><xsl:value-of select="/n:mods/n:originInfo/n:dateCreated" /></field>
+                <field name="date_from"><xsl:value-of select="/n:mods/n:originInfo/n:dateCreated" /></field>
                 <xsl:apply-templates select="/n:mods/n:subject/n:topic"></xsl:apply-templates>
                 <xsl:apply-templates select="/n:mods/n:subject/n:temporal"></xsl:apply-templates>
                 <field name="abstract"><xsl:value-of select="/n:mods/n:abstract" /></field>
                 <field name="journal"><xsl:value-of select="/n:mods/n:relatedItem/n:titleInfo/n:title" /></field>
                 <field name="volume"><xsl:value-of select="/n:mods/n:relatedItem/n:part/n:detail[@type='volume']/n:number" /></field>
                 <field name="pages"><xsl:value-of select="/n:mods/n:relatedItem/n:part/n:extent[@unit='pages']/n:list" /></field>
+                <field name="phys_description"><xsl:value-of select="/n:mods/n:physicalDescription/n:note" /></field>
+                <field name="publisher"><xsl:value-of select="/n:mods/n:originInfo/n:publisher" /></field>
+                <field name="place"><xsl:value-of select="/n:mods/n:originInfo/n:place/n:placeTerm" /></field>
             </doc>
         </add>
     </xsl:template>
