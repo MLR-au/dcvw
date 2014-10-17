@@ -19,10 +19,16 @@ import logging
 log = logging.getLogger(__name__)
 
 from Index import *
+from clean.empty import elements
+from helpers import *
 
 class Common:
     def __init__(self):
-        pass
+        # the names of the fields which could have a date
+        self.date_fields = [ 'date_from', 'date_to' ]
+
+        # the names of the fields which could have markup
+        self.markup_fields = [ 'abstract', 'text' ]
 
     def add_field(self, doc, field_name, field_value):
         tmp = doc.xpath('/add/doc')[0]
@@ -35,98 +41,6 @@ class Common:
         add = etree.Element('add')
         add.append(tmp)
         return add
-
-
-class EAC(Common):
-    def __init__(self, eac_input, output_folder, transforms, url_base):
-        self.output_folder = output_folder
-
-        self.eac_input = eac_input
-        self.eac_transform = os.path.join(transforms, 'eac.xsl')
-
-        self.url_base = url_base
-
-        self.setup()
-
-    def run(self):
-        for (dirpath, dirnames, filenames) in os.walk(self.eac_input):
-            for f in filenames:
-                src = os.path.join(dirpath, f)
-                try:
-                    doc = etree.parse(src)
-                except:
-                    log.error("Couldn't process: %s" % src)
-                    log.error(sys.exc_info()[1])
-                    continue
-                    
-    def setup(self):
-        # walk the path and process the content
-        log.info('Setting up the required folder structure')
-        output_folder = os.path.join(self.output_folder, 'eac') 
-        if not os.path.exists(output_folder):
-            log.debug("Creating: %s" % output_folder)
-            os.makedirs(output_folder)
- 
-        # ensure we have the required folder structure
-        solr = os.path.join(output_folder, 'solr')
-        if not os.path.exists(solr):
-            log.debug("Creating: %s" % solr)
-            os.makedirs(solr)
-
-        # ensure we have the required folder structure
-        eac_original = os.path.join(output_folder, 'original')
-        if not os.path.exists(eac_original):
-            log.debug("Creating: %s" % eac_original)
-            os.makedirs(eac_original)
-
-
-class MODS(Common):
-    def __init__(self, mods_input, output_folder, transforms, url_base):
-        self.output_folder = output_folder
-
-        self.mods_input = mods_input
-        self.mods_transform = os.path.join(transforms, 'mods.xsl')
-
-        self.url_base = url_base
-
-        self.setup()
-
-    def run(self):
-        for (dirpath, dirnames, filenames) in os.walk(self.mods_input):
-            for f in filenames: 
-                file_basename = f
-                src = os.path.join(dirpath, f)
-                d = self.transform_record(src, self.mods_transform)
-
-                if d is not None:
-                    output_file = os.path.join(self.output_folder, 'mods/solr', file_basename)
-                    f = open(output_file, 'w')
-                    f.write(etree.tostring(d, pretty_print=True))
-                    f.close()
-
-                    tgt = os.path.join(self.output_folder, 'mods', 'original', file_basename)
-                    log.debug("Copying over the original mods record: %s" % src)
-                    shutil.copyfile(src, tgt)
-
-    def setup(self):
-        # walk the path and process the content
-        log.info('Setting up the required folder structure')
-        output_folder = os.path.join(self.output_folder, 'mods') 
-        if not os.path.exists(output_folder):
-            log.debug("Creating: %s" % output_folder)
-            os.makedirs(output_folder)
- 
-        # ensure we have the required folder structure
-        solr = os.path.join(output_folder, 'solr')
-        if not os.path.exists(solr):
-            log.debug("Creating: %s" % solr)
-            os.makedirs(solr)
-
-        # ensure we have the required folder structure
-        mods_original = os.path.join(output_folder, 'original')
-        if not os.path.exists(mods_original):
-            log.debug("Creating: %s" % mods_original)
-            os.makedirs(mods_original)
 
     def transform_record(self, doc, transform):
         #if os.path.basename(doc) == 'CBB100627.xml':
@@ -151,13 +65,124 @@ class MODS(Common):
             return
 
         # transform it!
-        log.info("Transforming: %s" % doc)
+        log.debug("Transforming: %s" % doc)
         d = xsl(tree)
 
-        log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
-        return d
-     
+        # clean the date entries for solr
+        clean_dates(d)
 
+        try:
+            # clean the fields with markup
+            clean_markup(d)
+        except ValueError:
+            log.error("I think there's something wrong with the transformed result of: %s" % doc[0])
+
+        # strip empty elements - dates in particular cause
+        #  solr to barf horribly...
+        elements().strip_empty_elements(d)
+        
+        #log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
+        return d
+
+class EAC(Common):
+    def __init__(self, eac_input, output_folder, transforms, url_base):
+        self.output_folder = output_folder
+
+        self.eac_input = eac_input
+        self.eac_transform = os.path.join(transforms, 'eac.xsl')
+
+        self.url_base = url_base
+
+        self.setup()
+
+    def run(self):
+        for (dirpath, dirnames, filenames) in os.walk(self.eac_input):
+            dirname = os.path.basename(dirpath)
+            solr_output = os.path.join(self.output_folder, 'eac', dirname, 'solr')
+            #orig_output = os.path.join(self.output_folder, dirname, 'eac/original')
+
+            if not os.path.exists(solr_output):
+                os.makedirs(solr_output)
+
+            #if not os.path.exists(orig_output):
+            #    os.mkdir(orig_output)
+
+            for f in filenames:
+                file_basename = f
+                src = os.path.join(dirpath, f)
+                log.info("Processing: %s" % src)
+                d = self.transform_record(src, self.eac_transform)
+                if d is None:
+                    continue
+
+                d = self.add_field(d, 'id', "EAC_%s" % file_basename.split('.')[0])
+                output_file = os.path.join(solr_output, file_basename)
+                f = open(output_file, 'w')
+                f.write(etree.tostring(d, pretty_print=True))
+                f.close()
+
+                #tgt = os.path.join(orig_output, file_basename)
+                #shutil.copyfile(src, tgt)
+                #sys.exit()
+                    
+    def setup(self):
+        # walk the path and process the content
+        log.info('Setting up the required folder structure')
+        output_folder = os.path.join(self.output_folder, 'eac') 
+        if not os.path.exists(output_folder):
+            log.debug("Creating: %s" % output_folder)
+            os.makedirs(output_folder)
+ 
+class MODS(Common):
+    def __init__(self, mods_input, output_folder, transforms, url_base):
+        self.output_folder = output_folder
+
+        self.mods_input = mods_input
+        self.mods_transform = os.path.join(transforms, 'mods.xsl')
+        self.url_base = url_base
+        log.debug("MODS input: %s" % self.mods_input)
+        log.debug("MODS transform: %s" % self.mods_transform)
+
+        self.setup()
+
+    def run(self):
+        for (dirpath, dirnames, filenames) in os.walk(self.mods_input):
+            dirname = os.path.basename(dirpath)
+            solr_output = os.path.join(self.output_folder, 'mods', dirname, 'solr')
+            #orig_output = os.path.join(self.output_folder, 'mods/original', dirname)
+
+            if not os.path.exists(solr_output):
+                os.makedirs(solr_output)
+
+            #if not os.path.exists(orig_output):
+            #    os.mkdir(orig_output)
+
+            for f in filenames: 
+                file_basename = f
+                src = os.path.join(dirpath, f)
+                log.info("Processing: %s" % src)
+                d = self.transform_record(src, self.mods_transform)
+                if d is None:
+                    continue
+
+                d = self.add_field(d, 'id', "EAC_%s" % file_basename.split('.')[0])
+                output_file = os.path.join(solr_output, file_basename)
+                f = open(output_file, 'w')
+                f.write(etree.tostring(d, pretty_print=True))
+                f.close()
+
+                #tgt = os.path.join(orig_output, file_basename)
+                #shutil.copyfile(src, tgt)
+                #sys.exit()
+
+    def setup(self):
+        # walk the path and process the content
+        log.info('Setting up the required folder structure')
+        output_folder = os.path.join(self.output_folder, 'mods') 
+        if not os.path.exists(output_folder):
+            log.debug("Creating: %s" % output_folder)
+            os.makedirs(output_folder)
+ 
 if __name__ == "__main__":
     
     # read and check the options
@@ -198,41 +223,36 @@ if __name__ == "__main__":
     cfg = ConfigParser.SafeConfigParser()
     cfg.read(args.config)
 
-    input_folder = cfg.get('General', 'input') if (cfg.has_section('General') and cfg.has_option('General', 'input')) else None
     output_folder = cfg.get('General', 'output') if (cfg.has_section('General') and cfg.has_option('General', 'output')) else None
     transforms = cfg.get('General', 'transforms') if (cfg.has_section('General') and cfg.has_option('General', 'transforms')) else None
     url_base = cfg.get('General', 'url_base') if (cfg.has_section('General') and cfg.has_option('General', 'url_base')) else None
     solr = cfg.get('General', 'solr') if (cfg.has_section('General') and cfg.has_option('General', 'solr')) else None
  
-    # check the arguments
-    if not os.path.exists(input_folder):
-        log.error("Does %s exist?" % input_folder)
-        sys.exit()
-
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
     if (args.crawl and args.mods) is not None:
-        input_folder_mods = os.path.join(input_folder, args.mods)
-        log.debug("Processing: '%s'. Output: '%s'." % (input_folder_mods, output_folder))
-        mods = MODS(input_folder_mods, output_folder, transforms, url_base)
+        log.debug("Processing: '%s'. Output: '%s'." % (args.mods, output_folder))
+        mods = MODS(args.mods, output_folder, transforms, url_base)
         mods.run()
 
     if (args.crawl and args.eac) is not None:
-        input_folder_eac = os.path.join(input_folder, args.eac)
-        log.debug("Processing: '%s'. Output: '%s'." % (input_folder_eac, output_folder))
-        eac = EAC(input_folder_eac, output_folder, transforms, url_base)
+        log.debug("Processing: '%s'. Output: '%s'." % (args.eac, output_folder))
+        eac = EAC(args.eac, output_folder, transforms, url_base)
         eac.run()
 
     if args.post is not None:
-        log.info("Posting the data in: %s" % output_folder)
+        if args.mods is not None:
+            solr_content = args.mods
+        if args.eac is not None:
+            solr_content = args.eac
+        log.info("Posting the data in: %s" % solr_content)
         i = Index(solr)
-        i.clean()
         i.commit()
         i.optimize()
 
         # walk the path looking for the solr folder
-        for (dirpath, dirnames, filenames) in os.walk(output_folder):
+        for (dirpath, dirnames, filenames) in os.walk(solr_content):
             if os.path.basename(dirpath) == 'solr':
                 for f in filenames:
                     solr_doc = os.path.join(dirpath, f)
@@ -241,3 +261,4 @@ if __name__ == "__main__":
                     i.submit(etree.tostring(doc), solr_doc)
                 i.commit()
                 i.optimize()
+
