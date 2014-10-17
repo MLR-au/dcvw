@@ -153,6 +153,9 @@
     <field name="date_to" type="date" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="exist_from" type="date" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="exist_to" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="text" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false"
+        termVectors="true" termPositions="true" termOffsets="true" />
+
   </fields>
 
   <!-- Field to use to determine and enforce document uniqueness. 
