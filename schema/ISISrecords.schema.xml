@@ -125,18 +125,34 @@
     <!-- Common across document types -->
     <field name="id" type="string" indexed="true" stored="true" required="true" />
 
-    <field name="large_image" type="string" indexed="true" stored="true" multiValued="false" required="true" />
-    <field name="thumb_image" type="string" indexed="true" stored="true" multiValued="false" required="true" />
-    <field name="pdf" type="string" indexed="true" stored="true" multiValued="false" required="true" />
-
     <field name="title" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="genre" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+
+    <field name="abstract" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="journal" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="journal_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="volume" type="string" indexed="true" stored="true" multiValued="false" required="false" />
-    <field name="part" type="string" indexed="true" stored="true" multiValued="false" required="false" />
-    <field name="editor" type="string" indexed="true" stored="true" multiValued="false" required="false" />
-
-    <field name="text" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" 
-        termVectors="true" termPositions="true" termOffsets="true" />
-
+    <field name="pages" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="phys_description" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="phys_description_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="publisher" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="publisher_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="place" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="place_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="author" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="author_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_temporal" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_topic" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="name" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="family_name" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="family_name_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="given_name" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="given_name_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="entity_type" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="date_from" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="date_to" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="exist_from" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="exist_to" type="date" indexed="true" stored="true" multiValued="false" required="false" />
   </fields>
 
   <!-- Field to use to determine and enforce document uniqueness. 
@@ -144,25 +160,17 @@
    -->
   <uniqueKey>id</uniqueKey>
 
-  <!-- DEPRECATED: The defaultSearchField is consulted by various query parsers when
-  parsing a query string that isn't explicit about the field.  Machine (non-user)
-  generated queries are best made explicit, or they can use the "df" request parameter
-  which takes precedence over this.
-  Note: Un-commenting defaultSearchField will be insufficient if your request handler
-  in solrconfig.xml defines "df", which takes precedence. That would need to be removed.
-  <defaultSearchField>text</defaultSearchField> -->
-
-  <!-- DEPRECATED: The defaultOperator (AND|OR) is consulted by various query parsers
-  when parsing a query string to determine if a clause of the query should be marked as
-  required or optional, assuming the clause isn't already marked by some operator.
-  The default is OR, which is generally assumed so it is not a good idea to change it
-  globally here.  The "q.op" request parameter takes precedence over this.
-  <solrQueryParser defaultOperator="OR"/> -->
-
   <!-- copyField commands copy one field to another at the time a document
   is added to the index.  It's used either to index the same field differently,
   or to add multiple fields to the same field for easier/faster searching.  -->
 
+  <copyField source="journal" dest="journal_search" />
+  <copyField source="phys_description" dest="phys_description_search" />
+  <copyField source="publisher" dest="publisher_search" />
+  <copyField source="place" dest="place_search" />
+  <copyField source="author" dest="author_search" />
+  <copyField source="family_name" dest="family_name_search" />
+  <copyField source="given_name" dest="given_name_search" />
   <!-- copy into hints field 
   <copyField source="city" dest="hints" />
 
