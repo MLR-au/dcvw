@@ -29,9 +29,9 @@
     <xsl:template match="/">
         <add>
             <doc>
-                <field name="title"><xsl:value-of select="/n:mods/n:titleInfo[1]/n:title" /></field>
+                <field name="name"><xsl:value-of select="/n:mods/n:titleInfo[1]/n:title" /></field>
                 <xsl:apply-templates select="/n:mods/n:name/n:displayForm"></xsl:apply-templates>
-                <field name="genre"><xsl:value-of select="/n:mods/n:genre" /></field>
+                <field name="entity_type"><xsl:value-of select="/n:mods/n:genre" /></field>
                 <field name="date_from"><xsl:value-of select="/n:mods/n:originInfo/n:dateCreated" /></field>
                 <xsl:apply-templates select="/n:mods/n:subject/n:topic"></xsl:apply-templates>
                 <xsl:apply-templates select="/n:mods/n:subject/n:temporal"></xsl:apply-templates>
