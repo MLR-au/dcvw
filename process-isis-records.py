@@ -80,7 +80,19 @@ class Common:
         # strip empty elements - dates in particular cause
         #  solr to barf horribly...
         elements().strip_empty_elements(d)
-        
+
+        # add in the faux start and end date as required
+        #  but only if the record has a date from or to defined - for those
+        #  records where it'snot defined; we skip this step so we don't
+        #  get dodgy results
+        if d.xpath('/add/doc/field[@name="date_from"]') or d.xpath('/add/doc/field[@name="date_to"]'):
+            if d.xpath('/add/doc/field[@name="date_from"]'):
+                d = self.add_field(d, 'exist_from', d.xpath('/add/doc/field[@name="date_from"]')[0].text)
+
+            if d.xpath('/add/doc/field[@name="date_to"]'):
+                d = self.add_field(d, 'exist_to', d.xpath('/add/doc/field[@name="date_to"]')[0].text)
+
+       
         #log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
         return d
 
@@ -165,7 +177,7 @@ class MODS(Common):
                 if d is None:
                     continue
 
-                d = self.add_field(d, 'id', "EAC_%s" % file_basename.split('.')[0])
+                d = self.add_field(d, 'id', "MODS_%s" % file_basename.split('.')[0])
                 output_file = os.path.join(solr_output, file_basename)
                 f = open(output_file, 'w')
                 f.write(etree.tostring(d, pretty_print=True))
