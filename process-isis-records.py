@@ -111,13 +111,13 @@ class EAC(Common):
         for (dirpath, dirnames, filenames) in os.walk(self.eac_input):
             dirname = os.path.basename(dirpath)
             solr_output = os.path.join(self.output_folder, 'eac', dirname, 'solr')
-            #orig_output = os.path.join(self.output_folder, dirname, 'eac/original')
+            orig_output = os.path.join(self.output_folder, 'eac', dirname, 'original')
 
             if not os.path.exists(solr_output):
                 os.makedirs(solr_output)
 
-            #if not os.path.exists(orig_output):
-            #    os.mkdir(orig_output)
+            if not os.path.exists(orig_output):
+                os.mkdir(orig_output)
 
             for f in filenames:
                 file_basename = f
@@ -128,14 +128,15 @@ class EAC(Common):
                     continue
 
                 d = self.add_field(d, 'id', "EAC_%s" % file_basename.split('.')[0])
+                source = os.path.join(self.url_base, 'eac', os.path.basename(dirpath), 'original', f)
+                d = self.add_field(d, 'source', source)
                 output_file = os.path.join(solr_output, file_basename)
                 f = open(output_file, 'w')
                 f.write(etree.tostring(d, pretty_print=True))
                 f.close()
 
-                #tgt = os.path.join(orig_output, file_basename)
-                #shutil.copyfile(src, tgt)
-                #sys.exit()
+                tgt = os.path.join(orig_output, file_basename)
+                shutil.copyfile(src, tgt)
                     
     def setup(self):
         # walk the path and process the content
@@ -161,13 +162,13 @@ class MODS(Common):
         for (dirpath, dirnames, filenames) in os.walk(self.mods_input):
             dirname = os.path.basename(dirpath)
             solr_output = os.path.join(self.output_folder, 'mods', dirname, 'solr')
-            #orig_output = os.path.join(self.output_folder, 'mods/original', dirname)
+            orig_output = os.path.join(self.output_folder, 'mods', dirname, 'original')
 
             if not os.path.exists(solr_output):
                 os.makedirs(solr_output)
 
-            #if not os.path.exists(orig_output):
-            #    os.mkdir(orig_output)
+            if not os.path.exists(orig_output):
+                os.mkdir(orig_output)
 
             for f in filenames: 
                 file_basename = f
@@ -178,14 +179,15 @@ class MODS(Common):
                     continue
 
                 d = self.add_field(d, 'id', "MODS_%s" % file_basename.split('.')[0])
+                source = os.path.join(self.url_base, 'mods', os.path.basename(dirpath), 'original', f)
+                d = self.add_field(d, 'source', source)
                 output_file = os.path.join(solr_output, file_basename)
                 f = open(output_file, 'w')
                 f.write(etree.tostring(d, pretty_print=True))
                 f.close()
 
-                #tgt = os.path.join(orig_output, file_basename)
-                #shutil.copyfile(src, tgt)
-                #sys.exit()
+                tgt = os.path.join(orig_output, file_basename)
+                shutil.copyfile(src, tgt)
 
     def setup(self):
         # walk the path and process the content
