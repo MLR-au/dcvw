@@ -35,6 +35,7 @@
                 <field name="entity_type"><xsl:value-of select="/n:eac-cpf/n:cpfDescription/n:identity/n:entityType" /></field>
                 <field name="date_from"><xsl:value-of select="/n:eac-cpf/n:cpfDescription/n:description/n:existDates/n:dateSet/n:dateRange/n:fromDate/@standardDate" /></field>
                 <field name="date_to"><xsl:value-of select="/n:eac-cpf/n:cpfDescription/n:description/n:existDates/n:dateSet/n:dateRange/n:toDate/@standardDate" /></field>
+                <field name="record_type">Authority Record (EAC-CFP XML)</field>
             </doc>
         </add>
     </xsl:template>

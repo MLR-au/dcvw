@@ -125,8 +125,11 @@
     <!-- Common across document types -->
     <field name="id" type="string" indexed="true" stored="true" required="true" />
 
+    <field name="record_type" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="name" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="name_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="title" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="title_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="abstract" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="journal" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="journal_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
@@ -140,6 +143,8 @@
     <field name="place_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="author" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="author_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="editor" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="editor_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject_temporal" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject_topic" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="family_name" type="string" indexed="true" stored="true" multiValued="false" required="false" />
@@ -153,6 +158,7 @@
     <field name="exist_to" type="date" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="text" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false"
         termVectors="true" termPositions="true" termOffsets="true" />
+    <field name="source" type="string" indexed="false" stored="true" multiValued="false" required="false" />
 
   </fields>
 
@@ -165,13 +171,14 @@
   is added to the index.  It's used either to index the same field differently,
   or to add multiple fields to the same field for easier/faster searching.  -->
 
+  <copyField source="name" dest="name_search" />
+  <copyField source="title" dest="title_search" />
   <copyField source="journal" dest="journal_search" />
   <copyField source="phys_description" dest="phys_description_search" />
   <copyField source="publisher" dest="publisher_search" />
   <copyField source="place" dest="place_search" />
   <copyField source="author" dest="author_search" />
-  <copyField source="family_name" dest="family_name_search" />
-  <copyField source="given_name" dest="given_name_search" />
+  <copyField source="editor" dest="editor_search" />
   <!-- copy into hints field 
   <copyField source="city" dest="hints" />
 
