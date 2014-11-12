@@ -1,5 +1,4 @@
 [General]
-input:                          data/files.digitisation.unimelb.edu.au
 output:                         /srv/ha/web/DCVW/LIVE
 transforms:                     transforms
 url_base:                       https://web.esrc.unimelb.edu.au/DCVW
