@@ -3,7 +3,7 @@
 if [ $# != 2 ]; then
 cat <<EOF
     Script requires two arguments:
-    $1 = the path to the folder of tif images
+    $1 = the path to the folder of images
     $2 = where the jpgs should be stored
 
     ex. $0 TIFF JPG
