@@ -24,11 +24,7 @@ from helpers import *
 
 class Common:
     def __init__(self):
-        # the names of the fields which could have a date
-        self.date_fields = [ 'date_from', 'date_to' ]
-
-        # the names of the fields which could have markup
-        self.markup_fields = [ 'abstract', 'text' ]
+        pass
 
     def add_field(self, doc, field_name, field_value):
         tmp = doc.xpath('/add/doc')[0]
@@ -99,6 +95,11 @@ class Common:
             # add the existence to date if no to date and from date
             if not d.xpath('/add/doc/field[@name="exist_to"]'):
                 d = self.add_field(d, 'exist_to', d.xpath('/add/doc/field[@name="date_from"]')[0].text)
+
+        if d.xpath('/add/doc/field[@name="date_created"]'):
+            if d.xpath('/add/doc/field[@name="date_created"]'):
+                d = self.add_field(d, 'date_created_to', d.xpath('/add/doc/field[@name="date_created"]')[0].text)
+
         #log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
         return d
 
