@@ -19,45 +19,60 @@ log = logging.getLogger(__name__)
 from Index import *
 
 class Crawler:
-    def __init__(self, input_folder, output_folder, transforms, url_base):
+    def __init__(self, input_folder, n, output_folder, transforms, url_base):
         self.input_folder = input_folder
+        if n is not None:
+            self.stop_after = int(n)
+        else:
+            self.stop_after = n
         self.output_folder = output_folder
-        self.transform = os.path.join(transforms, 'udc.xsl')
+        self.transforms = transforms
         self.url_base = url_base
 
     def run(self):
         # walk the path looking for XML files matching the bib code
+        count = 0
         for (dirpath, dirnames, filenames) in os.walk(self.input_folder):
             for f in filenames:
-                if fnmatch(f, 'b???????.xml'):
-
+                if fnmatch(f, '*-item.xml'):
+                    count += 1
                     # looks like a folder we want to process
-                    datafiles = {}
-                    for f in filenames:
-                        if fnmatch(f, 'b???????.xml'):
-                            datafiles['metadata_file'] = f
 
-                        elif fnmatch(f, 'b???????-?????-?????.pdf'):
+                    datafiles = {}
+                    datafiles['dirpath'] = dirpath
+                    datafiles['metadata_files'] = []
+                    datafiles['metadata_files'].append(os.path.join(dirpath, f))
+
+                    bibrecid = f.split('-')[0]
+                    item = f.split('-')[1]
+                    log.info("Processing: %s: %s-%s" % (count, bibrecid, item))
+
+                    for f in filenames:
+                        if fnmatch(f, '*-cat.xml'):
+                            datafiles['metadata_files'].append(os.path.join(dirpath, f))
+
+                        #elif fnmatch(f, '*-exiftool.txt'):
+                        #    datafiles['metadata_files'].append(os.path.join(dirpath, f))
+
+                        elif fnmatch(f, '*.pdf'):
                             datafiles['pdf_data_file'] = f
 
-                        elif fnmatch(f, 'b???????-omnipage.xml'):
-                            datafiles['ocr_data_file'] = f
 
-                    datafiles['dirpath'] = dirpath
-                    bibrecid = datafiles['metadata_file'].split('.xml')[0]
-                    item = datafiles['pdf_data_file'].split('-')[1]
-
-                    log.info("Processing: %s-%s" % (bibrecid, item))
+                    log.debug(datafiles);
 
                     # setup 
                     output_folder = self.setup(bibrecid, item)
 
                     # get the metadata
-                    metadata_file = os.path.join(datafiles['dirpath'], datafiles['metadata_file'])
-                    metadata = self.get_metadata(metadata_file, bibrecid, item)
+                    metadata = self.get_metadata(datafiles['metadata_files'], bibrecid, item)
+                    if metadata == None:
+                        log.error("Metadata file invalid. Not continuing.")
+                        if (self.stop_after == count):
+                            sys.exit()
+                        continue
 
                     # process any images
-                    image_paths = [ os.path.join(datafiles['dirpath'], d) for d in [ 'TIFF', 'TIF', 'JP2' ] ]
+                    image_paths = [ os.path.join(datafiles['dirpath'], d) for d in [ 'TIFF', 'TIF', 'tiff', 'tif' ] ]
                     for path in image_paths:
                         if os.path.exists(path):
                             log.debug("Processing images at: %s" % path)
@@ -68,10 +83,12 @@ class Crawler:
                     url_base = os.path.join(self.url_base, bibrecid, item)
                     self.create_solr_stub_records(output_folder, metadata, url_base)
 
-                    if datafiles.has_key('ocr_data_file'):
-                        self.process_ocr_data(os.path.join(datafiles['dirpath'], datafiles['ocr_data_file']), output_folder)
+                    self.process_ocr_data(os.path.join(datafiles['dirpath'], 'OCR'), output_folder)
 
-                    log.info('')
+                    if self.stop_after is not None and self.stop_after == count:
+                        sys.exit()
+
+                    log.info("")
 
     def setup(self, bibrecid, item):
         """Setup the required output folder structure"""
@@ -89,35 +106,53 @@ class Crawler:
 
         return output_folder
 
-    def get_metadata(self, metadata_file, bibrecid, item):
+    def get_metadata(self, metadata_files, bibrecid, item):
         """Extract the item metadata and return it as an lxml document"""
         log.debug('Extracting the item metadata')
+
+        for m in metadata_files:
+            if fnmatch(m, '*-item.xml'):
+                transform = os.path.join(self.transforms, 'udc-item.xsl')
+                d = self.process_document(m, transform)
+                if d == None:
+                    log.error("Couldn't get any metadata from: %s" % m)
+                    return
+                d = self.add_field(d, 'bibrecid', bibrecid)
+                d = self.add_field(d, 'item', item)
+                d = self.add_field(d, 'group', "%s-%s" % (bibrecid, item))
+
+            #elif fnmatch(m, '*-cat.xml'):
+            #    transform = os.path.join(self.transforms, 'udc-cat.xsl')
+            #    e = self.process_document(m, transform)
+
+        log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
+        return d 
+
+    def process_document(self, d, transform):
         try:
-            log.debug("Reading in XSL transform to process metadata_file: %s" % self.transform)
-            xsl = etree.parse(self.transform)
+            log.debug("Reading in XSL transform to process metadata_file: %s" % transform)
+            xsl = etree.parse(transform)
             xsl.xinclude()
             xsl = etree.XSLT(xsl)
         except IOError:
-            log.error("No such transform: %s" % self.transform)
+            log.error("No such transform: %s" % transform)
             return
         except etree.XSLTParseError:
-            log.error("Check the stylesheet; I can't parse it! %s" % self.transform)
+            log.error("Check the stylesheet; I can't parse it! %s" % transform)
             return
 
         # read in the metadata file 
-        log.debug("Reading in the metadata file: %s" % metadata_file)
-        tree = etree.parse(metadata_file)
+        log.debug("Reading in the metadata file: %s" % d)
+        try:
+            tree = etree.parse(d)
+        except etree.XMLSyntaxError:
+            log.error("Invalid metadata file: %s" % d)
+            return
 
         # transform it!
         log.debug("Transforming the document")
         d = xsl(tree)
-
-        d = self.add_field(d, 'bibrecid', bibrecid)
-        d = self.add_field(d, 'item', item)
-        d = self.add_field(d, 'group', "%s-%s" % (bibrecid, item))
-
-        log.debug("Metadata\n%s" % etree.tostring(d, pretty_print=True))
-        return d 
+        return d
 
     def add_field(self, doc, field_name, field_value):
         tmp = doc.xpath('/add/doc')[0]
@@ -133,7 +168,7 @@ class Crawler:
 
     def process_images(self, path, output_folder):
         log.info('Processing the image set')
-        output_folder = os.path.join(output_folder, 'JPG')
+        output_folder = os.path.join(output_folder, 'jpg')
         if not os.path.exists(output_folder):
             log.debug("Creating: %s" % output_folder)
             os.makedirs(output_folder)
@@ -149,7 +184,6 @@ class Crawler:
             os.makedirs(thumb_images)
 
         for f in os.listdir(path):
-
             # have we already converted this file - skip it if we have
             file_basename = os.path.basename(f).split('.')[0]
 
@@ -166,31 +200,38 @@ class Crawler:
                 # if we don't have a large image - create it
                 if not os.path.exists(large_file) or os.stat(large_file).st_size == 0:
                     log.debug("Creating jpeg for %s" % file_full_path)
-                    p = subprocess.check_call(['/usr/bin/convert',  file_full_path, "%s/%s.jpg" % (large_images, file_basename) ], stderr=subprocess.PIPE)
+                    large_file = "%s/%s.jpg" % (large_images, file_basename)
+                    cmd = "convert %s -resample 200 -strip -resize '3000x3000>' -compress JPEG -quality 30 -depth 8 -unsharp '1.5x1+0.7+0.02' %s" % (file_full_path, large_file)
+                    p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
                     #print ['convert', file_full_path, "%s/%s.jpg" % (large_images, file_basename) ]
 
                 # if we don't have a thumbnail - create it
                 if not os.path.exists(thumb_file) or os.stat(large_file).st_size == 0:
                     log.debug("Creating thumbnail for %s" % file_full_path)
-                    p = subprocess.check_call("/usr/bin/convert -thumbnail 100 %s %s/%s.jpg" % (file_full_path, thumb_images, file_basename), stderr=subprocess.PIPE, shell=True)
+                    cmd = "convert %s -thumbnail 100x200 -strip -compress JPEG -quality 20 -depth 8 %s/%s.jpg" % (large_file, thumb_images, file_basename)
+                    p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
 
                 continue
                 
     def create_solr_stub_records(self, output_folder, d, url_base):
         log.info('Creating the SOLR stub records')
-        images = os.path.join(output_folder, 'JPG', 'large')
+        images = os.path.join(output_folder, 'jpg', 'large')
         solr = os.path.join(output_folder, 'solr')
-        for f in os.listdir(images):
+        files = os.listdir(images)
+        total_pages = str(len(files))
+
+        for f in files:
             basename = os.path.splitext(os.path.basename(f))[0]
 
             rid = os.path.join(url_base, 'solr', basename)
-            large_image = os.path.join(url_base, 'JPG/large', "%s.jpg" % basename)
-            thumb_image = os.path.join(url_base, 'JPG/thumb', "%s.jpg" % basename)
-
+            large_image = os.path.join(url_base, 'jpg/large', "%s.jpg" % basename)
+            thumb_image = os.path.join(url_base, 'jpg/thumb', "%s.jpg" % basename)
+            
             doc = self.add_field(copy.deepcopy(d), 'id', "%s.xml" % rid)
             doc = self.add_field(doc, 'page', basename.split('-')[2])
             doc = self.add_field(doc, 'large_image', large_image)
             doc = self.add_field(doc, 'thumb_image', thumb_image)
+            doc = self.add_field(doc, 'total_pages', total_pages)
 
             fh = os.path.join(solr, "%s.xml" % basename)
             log.debug("Writing metatdata to: %s " % fh)
@@ -198,28 +239,43 @@ class Crawler:
             f.write(etree.tostring(doc, pretty_print=True))
             f.close()
 
-    def process_ocr_data(self, ocr_data_file, output_folder):
+    def process_ocr_data(self, ocr_data, output_folder):
         log.info('Processing the OCR data')
-        count = 0
+
+        # walk the tree of output images
+        try:
+            for f in os.listdir(os.path.join(output_folder, 'jpg/large')):
+                name = os.path.basename(f).split('.jpg')[0]
+                ocr_data_file = os.path.join(ocr_data, "%s.xml" % name)
+                solr_stub = os.path.join(output_folder, 'solr', "%s.xml" % name)
+
+                # parse that file as it should have metadata in it
+                tree = etree.parse(solr_stub)
+                #print etree.tostring(tree)
+                #print etree.tostring(element, pretty_print=True)
+                log.debug("Writing OCR data to: %s" % solr_stub)
+                text = self.get_ocr_text(ocr_data_file)
+                tree = self.add_field(tree, 'text', text)
+
+                fh = open(solr_stub, 'w')
+                fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
+                fh.close()
+        except:
+            print sys.exc_info()
+            log.error('No images!')
+                
+
+        # for each: source the OCR - load it and extract text content
+        # source the solr stub file - inject the text content
+
+    def get_ocr_text(self, ocr_data_file):
         try:
             for event, element in etree.iterparse(ocr_data_file,
                 tag = '{http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd}page'):
 
-                count += 1
-
                 # construct the solr source filename
-                source = element.xpath('n:description/n:source', namespaces = { 'n': 'http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd' })[0]
-                fh = source.attrib['file'].split('\\')[-1:][0].split('.')[0]
-                fh = os.path.join(output_folder, 'solr', "%s.xml" % fh)
-                log.debug("Writing OCR data to: %s" % fh)
-
-                # parse that file as it should have metadata in it
-                tree = etree.parse(fh)
-                tree = self.add_field(tree, 'text', " ".join(etree.tostring(element, method='text', encoding='unicode').split()))
-
-                fh = open(fh, 'w')
-                fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
-                fh.close()
+                source = element.xpath('n:body/n:section', namespaces = { 'n': 'http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd' })[0]
+                return " ".join(etree.tostring(element, method='text', encoding='unicode').split())
         except:
             pass
 
@@ -229,6 +285,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DCVW UDC Batch Processor')
 
     parser.add_argument('--config',   dest='config', required=True, help='The path to the config file.')
+    parser.add_argument('--input',   dest='input', required=True, help='The path to the input data.')
+    parser.add_argument('--output',   dest='output', required=True, help='The path to where the output should go.')
+    parser.add_argument('--n', dest='n', default=None, help="Stop after processing this many items.")
 
     parser.add_argument('--crawl', dest='crawl', action='store_true', default=None,
         help='Only perform the crawl and transform stages.')
@@ -256,24 +315,22 @@ if __name__ == "__main__":
     cfg = ConfigParser.SafeConfigParser()
     cfg.read(args.config)
 
-    input_folder = cfg.get('General', 'input') if (cfg.has_section('General') and cfg.has_option('General', 'input')) else None
-    output_folder = cfg.get('General', 'output') if (cfg.has_section('General') and cfg.has_option('General', 'output')) else None
     transforms = cfg.get('General', 'transforms') if (cfg.has_section('General') and cfg.has_option('General', 'transforms')) else None
     url_base = cfg.get('General', 'url_base') if (cfg.has_section('General') and cfg.has_option('General', 'url_base')) else None
     solr = cfg.get('General', 'solr') if (cfg.has_section('General') and cfg.has_option('General', 'solr')) else None
-    log.debug("Processing: '%s'. Output: '%s'. Solr: '%s'" % (input_folder, output_folder, solr))
+    log.debug("Processing: '%s'. Output: '%s'. Solr: '%s'" % (args.input, args.output, solr))
  
     # check the arguments
-    if not os.path.exists(input_folder):
-        log.error("Does %s exist?" % input_folder)
+    if not os.path.exists(args.input):
+        log.error("Does %s exist?" % args.input)
         sys.exit()
 
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    if not os.path.exists(args.output):
+        os.mkdir(args.output)
 
     if args.crawl is not None:
         ### CRAWLER
-        crawler = Crawler(input_folder, output_folder, transforms, url_base)
+        crawler = Crawler(args.input, args.n, args.output, transforms, url_base)
         crawler.run()
 
     if args.post is not None:
