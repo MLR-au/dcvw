@@ -1,4 +1,4 @@
 [General]
 transforms:                     transforms
 url_base:                       https://web.esrc.unimelb.edu.au/DCVW
-solr:                           http://idx-testing.internal:8080/solr/DCVW
+solr:                           http://localhost:8080/solr/DCVW
