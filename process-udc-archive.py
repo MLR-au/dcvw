@@ -73,17 +73,21 @@ class Crawler:
 
                     # process any images
                     image_paths = [ os.path.join(datafiles['dirpath'], d) for d in [ 'TIFF', 'TIF', 'tiff', 'tif' ] ]
+                    found_images = False;
                     for path in image_paths:
                         if os.path.exists(path):
-                            log.debug("Processing images at: %s" % path)
+                            found_images = True;
                             self.process_images(path, output_folder)
+
+                            # create a solr record for each image found
+                            url_base = os.path.join(self.url_base, bibrecid, item)
+                            self.create_solr_stub_records(output_folder, metadata, url_base)
+
+                            self.process_ocr_data(os.path.join(datafiles['dirpath'], 'OCR'), output_folder)
                             break
-
-                    # create a solr record for each image found
-                    url_base = os.path.join(self.url_base, bibrecid, item)
-                    self.create_solr_stub_records(output_folder, metadata, url_base)
-
-                    self.process_ocr_data(os.path.join(datafiles['dirpath'], 'OCR'), output_folder)
+                    
+                    if not found_images:
+                        log.error("No images found! %s, %s" % (bibrecid, item))
 
                     if self.stop_after is not None and self.stop_after == count:
                         sys.exit()
@@ -202,14 +206,22 @@ class Crawler:
                     log.debug("Creating jpeg for %s" % file_full_path)
                     large_file = "%s/%s.jpg" % (large_images, file_basename)
                     cmd = "convert %s -resample 200 -strip -resize '3000x3000>' -compress JPEG -quality 30 -depth 8 -unsharp '1.5x1+0.7+0.02' %s" % (file_full_path, large_file)
-                    p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
+                    try:
+                        p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
+                    except:
+                        log.error("Error creating large jpeg")
+                        log.error("%s" % cmd)
                     #print ['convert', file_full_path, "%s/%s.jpg" % (large_images, file_basename) ]
 
                 # if we don't have a thumbnail - create it
                 if not os.path.exists(thumb_file) or os.stat(large_file).st_size == 0:
                     log.debug("Creating thumbnail for %s" % file_full_path)
                     cmd = "convert %s -thumbnail 100x200 -strip -compress JPEG -quality 20 -depth 8 %s/%s.jpg" % (large_file, thumb_images, file_basename)
-                    p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
+                    try:
+                        p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
+                    except:
+                        log.error("Error creating thumbnail")
+                        log.error("%s" % cmd)
 
                 continue
                 
@@ -217,6 +229,7 @@ class Crawler:
         log.info('Creating the SOLR stub records')
         images = os.path.join(output_folder, 'jpg', 'large')
         solr = os.path.join(output_folder, 'solr')
+
         files = os.listdir(images)
         total_pages = str(len(files))
 
@@ -243,26 +256,22 @@ class Crawler:
         log.info('Processing the OCR data')
 
         # walk the tree of output images
-        try:
-            for f in os.listdir(os.path.join(output_folder, 'jpg/large')):
-                name = os.path.basename(f).split('.jpg')[0]
-                ocr_data_file = os.path.join(ocr_data, "%s.xml" % name)
-                solr_stub = os.path.join(output_folder, 'solr', "%s.xml" % name)
+        for f in os.listdir(os.path.join(output_folder, 'jpg/large')):
+            name = os.path.basename(f).split('.jpg')[0]
+            ocr_data_file = os.path.join(ocr_data, "%s.xml" % name)
+            solr_stub = os.path.join(output_folder, 'solr', "%s.xml" % name)
 
-                # parse that file as it should have metadata in it
-                tree = etree.parse(solr_stub)
-                #print etree.tostring(tree)
-                #print etree.tostring(element, pretty_print=True)
-                log.debug("Writing OCR data to: %s" % solr_stub)
-                text = self.get_ocr_text(ocr_data_file)
-                tree = self.add_field(tree, 'text', text)
+            # parse that file as it should have metadata in it
+            tree = etree.parse(solr_stub)
+            #print etree.tostring(tree)
+            #print etree.tostring(element, pretty_print=True)
+            log.debug("Writing OCR data to: %s" % solr_stub)
+            text = self.get_ocr_text(ocr_data_file)
+            tree = self.add_field(tree, 'text', text)
 
-                fh = open(solr_stub, 'w')
-                fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
-                fh.close()
-        except:
-            print sys.exc_info()
-            log.error('No images!')
+            fh = open(solr_stub, 'w')
+            fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
+            fh.close()
                 
 
         # for each: source the OCR - load it and extract text content
@@ -286,7 +295,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--config',   dest='config', required=True, help='The path to the config file.')
     parser.add_argument('--input',   dest='input', required=True, help='The path to the input data.')
-    parser.add_argument('--output',   dest='output', required=True, help='The path to where the output should go.')
+    parser.add_argument('--output',   dest='output', help='The path to where the output should go.')
     parser.add_argument('--n', dest='n', default=None, help="Stop after processing this many items.")
 
     parser.add_argument('--crawl', dest='crawl', action='store_true', default=None,
@@ -310,6 +319,9 @@ if __name__ == "__main__":
         # just give us error messages
         logging.basicConfig(level=logging.WARN)
 
+    if not os.path.exists(args.config):
+        log.error("Can't find that config file: %s" % args.config)
+        sys.exit()
 
     # get the default configuration
     cfg = ConfigParser.SafeConfigParser()
@@ -325,7 +337,7 @@ if __name__ == "__main__":
         log.error("Does %s exist?" % args.input)
         sys.exit()
 
-    if not os.path.exists(args.output):
+    if args.output is not None and not os.path.exists(args.output):
         os.mkdir(args.output)
 
     if args.crawl is not None:
@@ -334,16 +346,24 @@ if __name__ == "__main__":
         crawler.run()
 
     if args.post is not None:
-        log.info("Posting the data in: %s" % output_folder)
+        log.info("Posting the data in: %s" % args.input)
         i = Index(solr)
 
         # walk the path looking for the solr folder
-        for (dirpath, dirnames, filenames) in os.walk(output_folder):
+        count = 0
+        for (dirpath, dirnames, filenames) in os.walk(args.input):
             if os.path.basename(dirpath) == 'solr':
+                count += 1
+                log.info("Processing: %s: %s" % (count, dirpath))
                 for f in filenames:
                     solr_doc = os.path.join(dirpath, f)
            
                     doc = etree.parse(solr_doc)
                     i.submit(etree.tostring(doc), solr_doc)
+
+
                 i.commit()
                 i.optimize()
+
+            if args.n is not None and count == int(args.n):
+                sys.exit()
