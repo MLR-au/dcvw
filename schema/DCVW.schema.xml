@@ -129,16 +129,21 @@
     <field name="item" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="group" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="page" type="string" indexed="true" stored="true" multiValued="false" required="true" />
+    <field name="total_pages" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="large_image" type="string" indexed="true" stored="true" multiValued="false" required="true" />
     <field name="thumb_image" type="string" indexed="true" stored="true" multiValued="false" required="true" />
 
     <field name="author" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="author_sort" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="title" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="description" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="title_sort" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject_sort" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="imprint" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+
+    <field name="date_from" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="collection_uri" type="string" indexed="true" stored="true" multiValued="false" required="false" />
 
     <field name="text" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" 
         termVectors="true" termPositions="true" termOffsets="true" />
