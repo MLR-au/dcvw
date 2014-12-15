@@ -216,7 +216,7 @@ class Crawler:
                 # if we don't have a thumbnail - create it
                 if not os.path.exists(thumb_file) or os.stat(large_file).st_size == 0:
                     log.debug("Creating thumbnail for %s" % file_full_path)
-                    cmd = "convert %s -thumbnail 100x200 -strip -compress JPEG -quality 20 -depth 8 %s/%s.jpg" % (large_file, thumb_images, file_basename)
+                    cmd = "convert %s -thumbnail 100x200 -strip -depth 8 %s/%s.jpg" % (large_file, thumb_images, file_basename)
                     try:
                         p = subprocess.check_call(cmd, stderr=subprocess.PIPE, shell=True)
                     except:
