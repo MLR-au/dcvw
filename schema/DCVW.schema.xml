@@ -148,6 +148,8 @@
     <field name="text" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" 
         termVectors="true" termPositions="true" termOffsets="true" />
 
+    <field name="words" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+
   </fields>
 
   <!-- Field to use to determine and enforce document uniqueness. 

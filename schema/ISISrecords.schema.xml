@@ -126,10 +126,11 @@
     <field name="id" type="string" indexed="true" stored="true" required="true" />
     <field name="source" type="string" indexed="false" stored="true" multiValued="false" required="false" />
     <field name="record_type" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="record_type_short" type="string" indexed="true" stored="true" multiValued="false" required="false" />
 
     <!-- MODS Record fields -->
     <field name="title" type="string" indexed="true" stored="true" multiValued="false" required="false" />
-    <field name="title_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="title_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="author" type="string" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="author_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="editor" type="string" indexed="true" stored="true" multiValued="true" required="false" />
@@ -144,20 +145,39 @@
     <field name="exist_created" type="date" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="exist_created_to" type="date" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="abstract" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
-    <field name="journal" type="string" indexed="true" stored="true" multiValued="false" required="false" />
-    <field name="journal_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="journal_name" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="journal_name_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="journal_volume" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="journal_year" type="date" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="volume" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="pages" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="phys_description" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="phys_description_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="subtitle" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="subtitle_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="publisher" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="publisher_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="place" type="string" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="place_search" type="text_en_splitting" indexed="true" stored="true" multiValued="false" required="false" />
     <field name="subject_topic" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_topic_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject_temporal" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_temporal_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject_geographic" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_geographic_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
     <field name="subject_corporate" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_corporate_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_personal" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_personal_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="subject_search" type="text_en_splitting" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="chapter_book_title" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="chapter_book_author" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="chapter_book_editor" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="chapter_book_year" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="reviewed_book" type="string" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="reviewed_book_year" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+    <field name="reviewed_book_author" type="string" indexed="true" stored="true" multiValued="true" required="false" />
+    <field name="reviewed_book_editor" type="string" indexed="true" stored="true" multiValued="true" required="false" />
 
     <!-- EAC Record fields -->
     <field name="name" type="string" indexed="true" stored="true" multiValued="false" required="false" />
@@ -186,18 +206,39 @@
   is added to the index.  It's used either to index the same field differently,
   or to add multiple fields to the same field for easier/faster searching.  -->
 
+  <copyField source="subject_topic" dest="subject_search" />
+  <copyField source="subject_topic" dest="subject_topic_search" />
+  <copyField source="subject_temporal" dest="subject_search" />
+  <copyField source="subject_temporal" dest="subject_temporal_search" />
+  <copyField source="subject_geographic" dest="subject_search" />
+  <copyField source="subject_geographic" dest="subject_geographic_search" />
+  <copyField source="subject_corporate" dest="subject_search" />
+  <copyField source="subject_corporate" dest="subject_corporate_search" />
+  <copyField source="subject_personal" dest="subject_search" />
+  <copyField source="subject_personal" dest="subject_personal_search" />
 
   <copyField source="author" dest="author_search" />
+  <copyField source="reviewed_book_author" dest="author_search" />
   <copyField source="editor" dest="editor_search" />
-  <copyField source="title" dest="title_search" />
+  <copyField source="reviewed_book_editor" dest="editor_search" />
   <copyField source="contributor" dest="contributor_search" />
+  <copyField source="chapter_book_editor" dest="editor" />
+  <copyField source="chapter_book_title" dest="title_search" />
+  <copyField source="name" dest="title_search" />
+  <copyField source="subtitle" dest="title_search" />
+  <copyField source="title" dest="title_search" />
+  <copyField source="title" dest="name_search" />
+  <copyField source="name" dest="name_search" />
   <copyField source="name_role" dest="name_role_search" />
-  <copyField source="journal" dest="journal_search" />
+  <copyField source="journal_name" dest="journal_name_search" />
   <copyField source="phys_description" dest="phys_description_search" />
   <copyField source="publisher" dest="publisher_search" />
-
-  <copyField source="name" dest="name_search" />
   <copyField source="place" dest="place_search" />
+  <!--
+  <copyField source="journal_year" dest="date_created" />
+  <copyField source="reviewed_book_year" dest="date_created" />
+  <copyField source="chapter_book_year" dest="date_created" />
+  -->
   <!-- copy into hints field 
   <copyField source="city" dest="hints" />
 
