@@ -2,4 +2,4 @@
 output:                         /srv/ha/web/Isis/LIVE
 transforms:                     transforms
 url_base:                       https://web.esrc.unimelb.edu.au/Isis
-solr:                           http://idxm.internal:8080/solr/ISISrecords
+solr:                           http://idxm:8080/solr/ISISrecords
