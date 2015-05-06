@@ -11,6 +11,8 @@ from fnmatch import fnmatch
 import subprocess
 import copy
 import shlex
+import json
+import string
 
 # get the logger
 import logging
@@ -102,11 +104,15 @@ class Crawler:
             log.debug("Creating: %s" % output_folder)
             os.makedirs(output_folder)
  
-        # ensure we have the required folder structure
         solr = os.path.join(output_folder, 'solr')
         if not os.path.exists(solr):
             log.debug("Creating: %s" % solr)
             os.makedirs(solr)
+
+        words = os.path.join(output_folder, 'words')
+        if not os.path.exists(words):
+            log.debug("Creating: %s" % words)
+            os.makedirs(words)
 
         return output_folder
 
@@ -239,12 +245,14 @@ class Crawler:
             rid = os.path.join(url_base, 'solr', basename)
             large_image = os.path.join(url_base, 'jpg/large', "%s.jpg" % basename)
             thumb_image = os.path.join(url_base, 'jpg/thumb', "%s.jpg" % basename)
+            words = os.path.join(url_base, 'words', "%s.json" % basename)
             
             doc = self.add_field(copy.deepcopy(d), 'id', "%s.xml" % rid)
             doc = self.add_field(doc, 'page', basename.split('-')[2])
             doc = self.add_field(doc, 'large_image', large_image)
             doc = self.add_field(doc, 'thumb_image', thumb_image)
             doc = self.add_field(doc, 'total_pages', total_pages)
+            doc = self.add_field(doc, 'words', words)
 
             fh = os.path.join(solr, "%s.xml" % basename)
             log.debug("Writing metatdata to: %s " % fh)
@@ -260,6 +268,9 @@ class Crawler:
             name = os.path.basename(f).split('.jpg')[0]
             ocr_data_file = os.path.join(ocr_data, "%s.xml" % name)
             solr_stub = os.path.join(output_folder, 'solr', "%s.xml" % name)
+            words_file = os.path.join(output_folder, 'words', "%s.json" % name)
+            if not os.path.exists(ocr_data_file):
+                continue
 
             # parse that file as it should have metadata in it
             tree = etree.parse(solr_stub)
@@ -273,6 +284,11 @@ class Crawler:
             fh.write(etree.tostring(tree, pretty_print=True, method='xml'))
             fh.close()
                 
+            # write out the word coords json file
+            words = self.get_ocr_words(ocr_data_file)
+            fh = open(words_file, 'w')
+            fh.write(json.dumps(words))
+            fh.close()
 
         # for each: source the OCR - load it and extract text content
         # source the solr stub file - inject the text content
@@ -287,6 +303,36 @@ class Crawler:
                 return " ".join(etree.tostring(element, method='text', encoding='unicode').split())
         except:
             pass
+
+    def get_ocr_words(self, ocr_data_file):
+        try:
+            tree = etree.parse(ocr_data_file)
+        except:
+            log.error("Couldn't parse: %s" % ocr_data_file)
+            print sys.exc_info()
+            return
+
+        # get page dimensions
+        for p in tree.xpath('//n:theoreticalPage', namespaces = { 'n': 'http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd' }):
+            page_dimensions = {}
+            page_dimensions['width'] = p.attrib['width']
+            page_dimensions['height'] = p.attrib['height']
+
+        words = {}
+        for p in tree.xpath('//n:wd', namespaces = { 'n': 'http://www.scansoft.com/omnipage/xml/ssdoc-schema3.xsd' }):
+            word_list = words.get(p.text)
+            coords = { 'left': p.attrib['l'], 'right': p.attrib['r'], 'top': p.attrib['t'], 'bottom': p.attrib['b'] }
+
+            try:
+                w = p.text.rstrip(string.punctuation)
+                if word_list is None:
+                    words[w] = [coords]
+                else:
+                    word_list.append(coords)
+                    words[w] = word_list
+            except:
+                pass
+        return { 'page': page_dimensions, 'words': words }
 
 if __name__ == "__main__":
     

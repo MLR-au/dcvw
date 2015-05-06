@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 
 # the names of the fields which could have a date
-date_fields = [ 'date_from', 'date_to', 'date_created' ]
+date_fields = [ 'date_from', 'date_to', 'date_created', 'chapter_book_year', 'journal_year', 'reviewed_book_year' ]
 
 # the names of the fields which could have markup
 markup_fields = [ 'abstract', 'text', 'locality' ]
